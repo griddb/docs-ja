@@ -2,7 +2,8 @@
 
   CentOS 7.6の環境での動作を確認しています。
 
-  >#### :warning: 注意
+<!--[!WARNING]-->
+  >#### 注意
   >- このパッケージをインストールすると、OS内にgsadmユーザが作成されます。運用コマンドはgsadmユーザで操作してください。  
   >    例
   >    ```
@@ -13,19 +14,6 @@
   >- gsadmユーザでログインすると環境変数 GS_HOMEとGS_LOGが自動的に設定されます。また、運用コマンドの場所が環境変数 PATHに設定されます。
   >- Javaクライアントのライブラリ(gridstore.jar)は/usr/share/java上に、サンプルは/usr/griddb-XXX/docs/sample/program上に配置されます。
 
-<!--
-::: warning 注意
-- このパッケージをインストールすると、OS内にgsadmユーザが作成されます。運用コマンドはgsadmユーザで操作してください。  
-    例
-    ```
-    # su - gsadm
-    $ pwd
-    /var/lib/gridstore
-   ```
-- gsadmユーザでログインすると環境変数 GS_HOMEとGS_LOGが自動的に設定されます。また、運用コマンドの場所が環境変数 PATHに設定されます。
-- Javaクライアントのライブラリ(gridstore.jar)は/usr/share/java上に、サンプルは/usr/griddb-XXX/docs/sample/program上に配置されます。
-:::
--->
 
 ## インストール
 
@@ -125,12 +113,6 @@ GridDBが不要となった場合にはパッケージをアンインストー�
     $ sudo rpm -e griddb
   ```
 
-
->#### :warning: 注意
+<!--[!WARNING]-->
+>#### 注意
 >- 定義ファイルやデータファイルなど、GridDBホームディレクトリ下のファイルはアンインストールされません。不要な場合は手動で削除して下さい。
-
-<!--
-::: warning :warning: 注意
-- 定義ファイルやデータファイルなど、GridDBホームディレクトリ下のファイルはアンインストールされません。不要な場合は手動で削除して下さい。
-:::
--->

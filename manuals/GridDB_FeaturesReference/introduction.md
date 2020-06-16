@@ -15,16 +15,10 @@
 -   パラメータ
     -   GridDBの動作を制御するパラメータについて説明します。
 
->#### :warning: 注意
+<!--[!WARNING]-->
+>#### 注意
 >- GridDB Community Editionではシングル構成のみであり、複数ノードによるクラスタ構成は Standard Edition および  Advanced Editionのみ限定となっています。
 >- OSユーザ(gsadm)はパッケージを使ってGridDBをインストールした場合に作成されます。
-
-<!--
-::: warning 注意
-- GridDB Community Editionではシングル構成のみであり、複数ノードによるクラスタ構成は Standard Edition および  Advanced Editionのみ限定となっています。
-- OSユーザ(gsadm)はパッケージを使ってGridDBをインストールした場合に作成されます。
-:::
--->
 
 ## 用語一覧
 

@@ -887,16 +887,11 @@ ResultSetMetaDataインターフェースには、検索結果ResultSetのカラ
 | 配列型             | "java.lang.Object"  | Types.OTHER     | "UNKNOWN"         |
 | カラムのデータ型を特定できない場合(※1) | "java.lang.Object"  | Types.OTHER     | "UNKNOWN"         |
 
->#### :memo: メモ
+<!--[!NOTE]-->
+>#### メモ
 >- (※1). 例えば「SELECT NULL」を実行して得られるResultSetのような場合
 >- GEOMETRY型と配列型については、NoSQLインターフェースで作成された、これらのデータ型を持つテーブルを検索した場合に値が返ります。JDBCでは、これらのデータ型を持つテーブルは作成できません。
 
-<!--
-::: tip メモ
-- (※1). 例えば「SELECT NULL」を実行して得られるResultSetのような場合
-- GEOMETRY型と配列型については、NoSQLインターフェースで作成された、これらのデータ型を持つテーブルを検索した場合に値が返ります。JDBCでは、これらのデータ型を持つテーブルは作成できません。
-:::
--->
 
 #### 単純値を返す属性
 

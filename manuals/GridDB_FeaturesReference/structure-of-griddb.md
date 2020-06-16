@@ -2,14 +2,10 @@
 
 GridDBのクラスタ動作の仕組みについて説明します。
 
->:exclamation: 重要  
->**GridDB Community Editionは、1ノードで動作させるシングル構成のみで、複数ノードで構成されるクラスタの構成には対応していません**。  
 
-<!--
-::: danger 重要  
-**GridDB Community Editionは、1ノードで動作させるシングル構成のみで、複数ノードで構成されるクラスタの構成には対応していません**。  
-:::
--->
+<!--[!WARNING]-->
+>## 重要  
+>**GridDB Community Editionは、1ノードで動作させるシングル構成のみで、複数ノードで構成されるクラスタの構成には対応していません**。  
 
 ## クラスタの構成
 
@@ -229,13 +225,9 @@ $ gs_stat -u admin/admin
     "partitionStatus": "NORMAL",
     ：
 ```
-
->##### :memo: メモ
+<!--[!NOTE]-->
+>##### メモ
 >- マスタノード以外の/cluster/partitionStatusの値は、正しくない場合があります。必ずマスタノードの値を確認してください。
-
-::: tip メモ
-- マスタノード以外の/cluster/partitionStatusの値は、正しくない場合があります。必ずマスタノードの値を確認してください。
-:::
 
 
 ## <a id="cluster_configuration_methods"></a> クラスタ構成方式
@@ -393,13 +385,7 @@ $ curl http://example.com/notification/provider
 ]
 ```
 
->##### :memo: メモ
+<!--[!NOTE]-->
+>##### メモ
 >-   各アドレスおよびポートはノード定義ファイルのserviceAddressおよびservicePortをモジュール(cluster,syncなど)ごとに指定します。
 >-   クラスタ定義ファイルの/cluster/notificationAddress、/cluster/notificationMember、/cluster/notificationProviderは、使用するクラスタ構成方式に合わせていずれか1つを設定してください。
-
-<!--
-::: tip メモ
--   各アドレスおよびポートはノード定義ファイルのserviceAddressおよびservicePortをモジュール(cluster,syncなど)ごとに指定します。
--   クラスタ定義ファイルの/cluster/notificationAddress、/cluster/notificationMember、/cluster/notificationProviderは、使用するクラスタ構成方式に合わせていずれか1つを設定してください。
-:::
--->
