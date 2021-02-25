@@ -912,6 +912,36 @@ SELECT * FROM employees NATURAL INNER JOIN departments;
 
 
 
+### OVER
+
+問い合わせ結果の分割や、並び替えを行います。WINDOW関数と共に利用します。
+
+**構文**
+
+|                                   |
+|-----------------------------------|
+| *関数*　OVER ( \[PARTITION BY *式1* \] \[ORDER BY *式2* \] )     |
+
+**仕様**
+
+
+- SELECT句で利用できます。
+- 対応する関数は以下です。
+  - ROW_NUMBER()
+- PARTITION BY句で問い合わせ結果を分割します。ORDER BY句でロウの並び替えを行います。
+- 同一SELECT句内でのWINDOW関数/OVER句の複数利用や、WINDOW関数/OVER句とMEDIAN関数の同時利用はできません。
+- PARTITION BY句に、以下の式は指定できません。
+  - OVER句を含む式
+  - 集計関数を含む式
+  - 列の別名を含む式
+  - サブクエリ
+- ORDER BY句に、以下の式は指定できません。
+  - OVER句を含む式
+  - 集計関数を含む式
+  - 列の別名を含む式
+  - サブクエリ
+
+
 
 ## 演算子
 
@@ -1046,6 +1076,7 @@ SQL文には以下の関数が用意されています。
 |      | [VARIANCE](#variancevariance0)  | 標本分散を返します     |
 |      | [VARIANCE0](#variancevariance0) | 標本分散を返します     |
 |      | [VAR_POP](#var_pop)      | 母分散を返します     |
+|      | [MEDIAN](#MEDIAN)             | 中央値を返します     |
 | [算術](#算術関数) | [ABS](#abs)       | 絶対値を返します     |
 |      | [ROUND](#round)               | 四捨五入します     |
 |      | [RANDOM](#random)             | 乱数を返します     |
@@ -1081,6 +1112,7 @@ SQL文には以下の関数が用意されています。
 |      | [STRFTIME](#strftime)               | 時刻をフォーマット変換した文字列を返します    |
 |      | [MAKE_TIMESTAMP](#make_timestamp)   | 時刻を生成します    |
 |      | [TIMESTAMP_TRUNC](#timestamp_trunc) | 時刻を切り捨てます    |
+| [WINDOW](#window_function) | [ROW_NUMBER](#row_number)       | 結果のロウに対して、一意となる連番値を割り振ります       |
 | [その他](#other_function) | [COALESCE](#coalesce)      | NULLではない最初の引数を返します     |
 |      | [IFNULL](#ifnull)          | NULLではない最初の引数を返します     |
 |      | [NULLIF](#nullif)          | 2つの引数が同じ場合はNULL、異なる場合は最初の引数を返します     |
@@ -1122,13 +1154,15 @@ SQL文には以下の関数が用意されています。
 ### 集計関数
 
 値を集計する関数です。
+集計関数の引数には、DISTINCTまたはALLを指定できます。
 
 |      |      |
 |------|-------|
-| 書式 | function( [ALL] *argument*) |
+| 書式 | function( [DISTINCT \| ALL] *argument*) |
 
 | 項目     | 意味  |
 |---------|-------|
+| DISTINCT | 重複する値のロウは除外して集計します |
 | ALL     | 重複する値も含めてすべてのロウを集計します |
 
 指定を省略した場合は、ALLを指定した場合と同じになります。
@@ -1143,7 +1177,7 @@ SQL文には以下の関数が用意されています。
 
 |      |      |
 |------|-------|
-| 書式 | AVG( [ALL] *n*) |
+| 書式 | AVG( [DISTINCT \| ALL] *n*) |
 
 *n* の平均値を返します。
 
@@ -1155,6 +1189,9 @@ SQL文には以下の関数が用意されています。
 ```example
 SELECT AVG(age) FROM employees;
 結果：41.0
+
+SELECT AVG(DISTINCT age) FROM employees;
+結果：40.5
 
 SELECT department, AVG(age) avg FROM employees GROUP BY department;
 結果：
@@ -1172,7 +1209,7 @@ SELECT department, AVG(age) avg FROM employees GROUP BY department;
 
 |      |      |
 |------|-------|
-| 書式 | COUNT(* \| [ALL] *x*) |
+| 書式 | COUNT(* \| [DISTINCT \| ALL] *x*) |
 
 ロウの数を返します。
 
@@ -1187,6 +1224,9 @@ SELECT COUNT(*) FROM employees;
 // 値がNULLのロウは無視してカウントします
 SELECT COUNT(department) FROM employees;
 結果：5
+
+SELECT COUNT(DISTINCT department) FROM employees;
+結果：3
 ```
 
 <a id="Aggregate_MAX"></a>
@@ -1194,7 +1234,7 @@ SELECT COUNT(department) FROM employees;
 
 |      |      |
 |------|-------|
-| 書式 | MAX( [ALL] *x*) |
+| 書式 | MAX( [DISTINCT \| ALL] *x*) |
 
 最大値を返します。
 
@@ -1219,7 +1259,7 @@ SELECT MAX(first_name) FROM employees;
 
 |      |      |
 |------|-------|
-| 書式 | MIN( [ALL] *x*) |
+| 書式 | MIN( [DISTINCT \| ALL] *x*) |
 
 最小値を返します。
 
@@ -1245,8 +1285,8 @@ SELECT MIN(first_name) FROM employees;
 
 |      |      |
 |------|-------|
-| 書式 | SUM( [ALL] *n*) |
-| 書式 | TOTAL( [ALL] *n*) |
+| 書式 | SUM( [DISTINCT \| ALL] *n*) |
+| 書式 | TOTAL( [DISTINCT \| ALL] *n*) |
 
 合計値を返します。
 
@@ -1282,7 +1322,7 @@ SELECT department, SUM(age) sum FROM employees GROUP BY department;
 
 |      |      |
 |------|-------|
-| 書式 | GROUP_CONCAT( [ALL] *x* [, *separator*] ) |
+| 書式 | GROUP_CONCAT( [DISTINCT \| ALL] *x* [, *separator*] ) |
 
 *x* の値を連結した文字列を返します。
 *separator* は、連結するセパレータを指定します。指定しない場合は","で連結します。
@@ -1318,12 +1358,12 @@ SELECT GROUP_CONCAT(age, ' + ') FROM employees;
 
 |      |      |
 |------|-------|
-| 書式 | STDDEV_SAMP( [ALL] *x*) |
+| 書式 | STDDEV_SAMP( [DISTINCT \| ALL] *x*) |
 
 標本標準偏差を返します。
 
 - 引数*x*には、数値型の値を指定します。
-  - 式に集計関数を含めることはできません。
+  - 式に集計関数、WINDOW関数/OVER句を含めることはできません。
 - *x* の値がNULLのロウは、計算の対象外になります。
 - *x* が1件の場合は、NULLを返します。
 - 結果の型はDOUBLE型です。
@@ -1347,13 +1387,13 @@ SELECT department, STDDEV_SAMP(enrollment_period) enrollment_period_stddev from 
 
 |      |      |
 |------|-------|
-| 書式 | STDDEV( [ALL] *x*) |
-| 書式 | STDDEV0( [ALL] *x*) |
+| 書式 | STDDEV( [DISTINCT \| ALL] *x*) |
+| 書式 | STDDEV0( [DISTINCT \| ALL] *x*) |
 
 標本標準偏差を返します。STDDEVはSTDDEV_SAMP関数の別名です。
 
 - 引数*x*には、数値型の値を指定します。
-  - 式に集計関数を含めることはできません。
+  - 式に集計関数、WINDOW関数/OVER句を含めることはできません。
 - *x* の値がNULLのロウは、計算の対象外になります。
 - 結果の型はDOUBLE型です。
 - STDDEVとSTDDEV0の違いは以下の通りです。
@@ -1399,12 +1439,12 @@ SELECT STDDEV0(enrollment_period) enrollment_period_stddev from employees WHERE 
 
 |      |      |
 |------|-------|
-| 書式 | STDDEV_POP( [ALL] *x*) |
+| 書式 | STDDEV_POP( [DISTINCT \| ALL] *x*) |
 
 母標準偏差を返します。
 
 - 引数*x*には、数値型の値を指定します。
-  - 式に集計関数を含めることはできません。
+  - 式に集計関数、WINDOW関数/OVER句を含めることはできません。
 - *x* の値がNULLのロウは、計算の対象外になります。
 - 結果の型はDOUBLE型です。
 
@@ -1427,12 +1467,12 @@ SELECT department, STDDEV_POP(enrollment_period) enrollment_period_stddev from e
 
 |      |      |
 |------|-------|
-| 書式 | VAR_SAMP( [ALL] *x*) |
+| 書式 | VAR_SAMP( [DISTINCT \| ALL] *x*) |
 
 標本分散を返します。
 
 - 引数*x*には、数値型の値を指定します。
-  - 式に集計関数を含めることはできません。
+  - 式に集計関数、WINDOW関数/OVER句を含めることはできません。
 - *x* の値がNULLのロウは、計算の対象外になります。
 - *x* が1件の場合は、NULLを返します。
 - 結果の型はDOUBLE型です。
@@ -1456,13 +1496,13 @@ SELECT department, VAR_SAMP(enrollment_period) enrollment_period_variance from e
 
 |      |      |
 |------|-------|
-| 書式 | VARIANCE( [ALL] *x*) |
-| 書式 | VARIANCE0( [ALL] *x*) |
+| 書式 | VARIANCE( [DISTINCT \| ALL] *x*) |
+| 書式 | VARIANCE0( [DISTINCT \| ALL] *x*) |
 
 標本分散を返します。VARIANCEはVAR_SAMP関数の別名です。
 
 - 引数*x*には、数値型の値を指定します。
-  - 式に集計関数を含めることはできません。
+  - 式に集計関数、WINDOW関数/OVER句を含めることはできません。
 - *x* の値がNULLのロウは、計算の対象外になります。
 - 結果の型はDOUBLE型です。
 - VARIANCEとVARIANCE0の違いは以下の通りです。
@@ -1507,7 +1547,7 @@ SELECT VARIANCE0(enrollment_period) enrollment_period_variance from employees WH
 
 |      |      |
 |------|-------|
-| 書式 | VAR_POP( [ALL] *x*) |
+| 書式 | VAR_POP( [DISTINCT \| ALL] *x*) |
 
 母分散を返します。
 
@@ -1529,6 +1569,34 @@ SELECT department, VAR_POP(enrollment_period) enrollment_period_variance from em
 
 ```
 
+#### MEDIAN
+
+|      |      |
+|------|-------|
+| 書式 | MEDIAN(*n*) |
+
+*n* の中央値を返します。計算対象のロウ数が偶数の場合は、中央に近い2つのロウの平均値を返します。
+
+- 引数*n*には、数値型の値を指定します。
+  - サブクエリは指定できません。
+- *n* の値がNULLのロウは、計算の対象外になります。
+- 結果の型は、*n* が整数のみの場合はLONG型、浮動小数点数の場合はDOUBLE型です。
+- 同一SELECT句内でのWINDOW関数/OVER句の複数利用や、WINDOW関数/OVER句とMEDIAN関数の同時利用はできません。
+
+例)
+```example
+SELECT MEDIAN(age) FROM employees;
+結果：43
+
+SELECT department, MEDIAN(age) mn FROM employees GROUP BY department ORDER BY mn DESC;
+結果：
+  department   mn
+  ------------+-----
+  Development  51
+  Sales        43
+  Research     31
+  (NULL)       29
+```
 
 
 
@@ -2543,6 +2611,32 @@ SELECT TIMESTAMP_TRUNC(DAY, MAKE_TIMESTAMP(2019, 5, 15), '-01:00');
 
 ```
 
+<a id="window_function"></a>
+### WINDOW関数
+
+#### ROW_NUMBER
+
+|      |      |
+|------|-------|
+| 書式 | ROW_NUMBER() OVER ( \[PARTITION BY *式1* \] \[ORDER BY *式2* \] ) |
+
+結果のロウに対して、一意となる連番値を割り振ります。
+
+- OVER句と共に利用します。詳細は[OVER句](#over)を参照ください。
+
+例)
+```example
+SELECT ROW_NUMBER() OVER(PARTITION BY department ORDER BY age) no, first_name, age, department FROM employees;
+結果：
+  no   first_name   age      department
+  ----+------------+--------+-------------
+  1    James        43       Development
+  2    William      59       Development
+  1    Mary         31       Research
+  1    John         43       Sales
+  2    Richard      (NULL)   Sales
+  1    Lisa         29       (NULL)
+```
 
 
 <a id="other_function"></a>
