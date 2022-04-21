@@ -1,9 +1,10 @@
 # RPMファイルを利用する場合
 
-  CentOS 7.6の環境での動作を確認しています。
+  CentOS 7.9の環境での動作を確認しています。
 
 <!--[!WARNING]-->
   >#### 注意
+  >- 事前にPython3をインストールしてください。
   >- このパッケージをインストールすると、OS内にgsadmユーザが作成されます。運用コマンドはgsadmユーザで操作してください。  
   >    例
   >    ```
@@ -13,7 +14,7 @@
   >    ```
   >- gsadmユーザでログインすると環境変数 GS_HOMEとGS_LOGが自動的に設定されます。また、運用コマンドの場所が環境変数 PATHに設定されます。
   >- Javaクライアントのライブラリ(gridstore.jar)は/usr/share/java上に、サンプルは/usr/griddb-XXX/docs/sample/program上に配置されます。
-
+  >- 過去版がインストールされている場合は、アンインストール後、/var/lib/gridstore上のconf/,data/を削除してください。
 
 ## インストール
 
@@ -56,7 +57,8 @@ OSのグループgridstoreとユーザgsadmが作成されます。ユーザgsad
                         gs_cluster.json  # クラスタ定義ファイル
                         gs_node.json     # ノード定義ファイル
                         password         # ユーザ定義ファイル
-                   data/                 # データベースファイルディレクトリ
+                   data/                 # データファイル,チェックポイントログディレクトリ
+                   txnlog/               # トランザクションログファイルディレクトリ
                    log/                  # ログディレクトリ
 ```
 
@@ -68,6 +70,7 @@ OSのグループgridstoreとユーザgsadmが作成されます。ユーザgsad
                 gs_cluster.json         # クラスタ定義ファイル
                 gs_node.json            # ノード定義ファイル
                 password                # ユーザ定義ファイル
+            conf_multicast/             # 定義ファイルディレクトリ(リモート接続用)
             3rd_party/                  
             docs/
                 manual/
@@ -80,7 +83,12 @@ OSのグループgridstoreとユーザgsadmが作成されます。ユーザgsad
 
 ## 起動／停止
 
-gsadmユーザで操作してください。それ以外は「[ソースコードを利用する場合](using-source-code.md#ソースコードを利用する場合)」の「起動／停止」と同じです。
+gsadmユーザで操作してください。
+また、デフォルトはローカル接続限定の設定になっていますので、以下の操作でコンフィグを変更してください。
+
+    [gsadm]$ cp /usr/griddb-X.X.X/conf_multicast/* conf/.
+
+それ以外は「[ソースコードを利用する場合](using-source-code.md#ソースコードを利用する場合)」の「起動／停止」と同じです。
 
 ## サンプルプログラムのビルド・実行方法
 
