@@ -1,6 +1,6 @@
 # GridDB ドキュメンテーション
 
-GridDB Community Edition v4.5 のドキュメントのレポジトリです。
+GridDB Community Edition v5.0 のドキュメントのレポジトリです。
 
 ## マニュアル一覧
 
