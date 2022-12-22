@@ -18,4 +18,4 @@ GridDB Community Edition v4.5 のドキュメントのレポジトリです。
 - Issue  
 リクエスト、質問、またはバグレポートがある場合は、GitHubのIssueを用いてください。
 - PullRequest  
-コードなどを提供したい場合は、GitHub pullrequest 機能を使用します。 GridDBコントリビュータライセンス契約 (CLA_rev1.1.pdf)に同意する必要があります。  GitHub pullrequest 機能を使用することにより、GridDBコントリビュータライセンス契約に同意したものと見なされます。
+コードなどを提供したい場合は、GitHub pullrequest 機能を使用します。 [GridDBコントリビュータライセンス契約 (CLA_rev1.1.pdf)](https://github.com/griddb/docs-ja/blob/master/CLA_rev1.1.pdf)に同意する必要があります。  GitHub pullrequest 機能を使用することにより、GridDBコントリビュータライセンス契約に同意したものと見なされます。
