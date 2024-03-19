@@ -14,7 +14,7 @@ GridDB Community Edition v5.5 のドキュメントのレポジトリです。
 |[GridDB JDBCドライバ説明書](manuals/md_reference_jdbc/md_reference_jdbc.md)| データベースにアクセスするための JDBC ドライバのマニュアルです。 |
 |[GridDB SQLリファレンス](manuals/md_reference_sql/md_reference_sql.md)| アプリケーション開発のためのSQLの仕様書(リファレンス)です。 |
 |[GridDB SQLチューニングガイド](manuals/md_sql_tuning_guide/md_sql_tuning_guide.md)| SQLのチューニング手順やSQL最適化のルールについて説明したマニュアルです。 |
-|[GridDB ETL 自動集計ガイド](manuals/md_etl_auto_aggregation_guide/md_etl_auto_aggregation_guide.md)| GridDBの蓄積データに対するETLツールを用いた自動集計について説明したマニュアルです。 |
+|[GridDB プログラミングガイド](manuals/md_programming_guide/md_programming_guide.md)| JavaやC言語のAPIの使用方法や、データ登録や検索などのプログラム例を説明したマニュアルです。 |
 
 ## コミュニティ
 - Issue  
