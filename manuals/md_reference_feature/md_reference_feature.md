@@ -2104,13 +2104,25 @@ GridDBは、メモリ上のデータをデータベースファイルに書き�
 
 　※上記以外の環境でデータブロック圧縮を有効にした場合、GridDBノードの起動に失敗します。
 
+**圧縮アルゴリズム**
+
+データブロック圧縮は以下の2種類のアルゴリズムから選択することができます。
+- ZLIB圧縮: ZLIBライブラリによる圧縮 (V5.6より古いバージョンから使用できる圧縮アルゴリズム)
+- ZSTD圧縮: ZSTD(Zstandard)ライブラリによる圧縮(V5.6から選択可能)。ZLIB圧縮より圧縮解凍速度や圧縮率で優れています。
+
+
 **設定方法**
 
 GridDBノードごとに圧縮機能を設定します。
 
--   ノード定義ファイル(gs_node.json)の/datastore/storeCompressionModeに以下の文字列を設定します。
-    -   圧縮機能を無効にする場合：NO_COMPRESSION（既定値）
-    -   圧縮機能を有効にする場合：COMPRESSION
+ノード定義ファイル(gs_node.json)の/dataStore/storeCompressionModeに以下の文字列を設定します。
+
+|設定する文字列|意味|
+|--------------------------------|--------------|
+|"NO_COMPRESSION" | 圧縮機能を無効にする（既定値） |
+|"COMPRESSION_ZLIB" または "COMPRESSION" | ZLIB圧縮機能を有効にする |
+|"COMPRESSION_ZSTD" | ZSTD圧縮機能を有効にする |
+
 -   GridDBノード起動時（再起動時）に設定を適用します。
 -   GridDBノードを再起動することで、圧縮機能の動作を有効/無効に変更することができます。
 
@@ -2118,6 +2130,7 @@ GridDBノードごとに圧縮機能を設定します。
 -   データブロック圧縮の対象は、データファイルのみです。チェックポイントログファイル、トランザクションログファイル、バックアップファイル、およびGridDBのメモリ上のデータは圧縮しません。
 -   データブロック圧縮により、データファイルはスパースファイルになります。
 -   圧縮機能を有効に変更しても、すでにデータファイルに書き込み済みのデータは圧縮できません。
+-   ZSTD圧縮機能を一度でも有効にした場合、そのデータファイルはV5.6より古いバージョンのサーバではオープンできません。GridDBのバージョンアップ後、ZSTD圧縮機能を有効にする前にはデータベースのバックアップをとることを推奨します。
 
 ### データブロック未使用領域解放
 
@@ -4391,8 +4404,255 @@ gs_shでは、ノード起動やクラスタ開始などのクラスタ操作や
 - データ操作
   - コンテナ作成、索引作成、TQL・SQLの実行など
 
+<a id="label_auto_aggregation"></a>
+## 時系列データ自動集計
+
+IoTの活用が広がる中で、時間とともに時系列データは大量に発生し、データベースに蓄積されます。  
+時系列データを参照・利用する際は、データ量を削減し扱いやすくするために、一定時間間隔での最大値、最小値、平均値などの集計を行うことがあります。
+しかし、大量の時系列データに対する集計演算は重く、結果取得までの待ち時間が長くなる傾向になります。  
+そこで、収集された大量の時系列データから、あらかじめバックグラウンドで自動的に集計演算を行い集計結果を蓄積する、自動集計が一般的に用いられます。
+これにより、ユーザは計算済みの集計結果にアクセスできるため、処理時間を短くできます。  
+
+以下の手順で、運用ツールを用いた時系列データ自動集計を行います。
+
+### 処理概要  
+
+あらかじめ集計対象のコンテナと出力先のコンテナを作成し、作成した集計対象のコンテナに対して、
+時系列データを登録します。登録した時系列データに対して集計を行い、出力先のコンテナに登録を行います。
+集計処理はクラスタ運用管理コマンド・インタプリタ（gs_sh）のバッチモードのスクリプトファイルを用いて実現します。
+自動集計はgs_shのスクリプトファイルを定期実行して実現します。
+定期実行については、Linuxのcronを利用します。
+
+処理の流れについて説明します。
+
+<a href="./img/process_summary.png" data-lightbox="group"><img src="./img/process_summary.png" width="512"></a>
+
+生データの登録先である入力コンテナをetl_input、集計データの登録先である出力コンテナをetl_outputとします。
+
+①コンテナ生成  
+入力コンテナを作成します。
+
+``` example
+CREATE TABLE IF NOT EXISTS etl_input (
+  ts TIMESTAMP PRIMARY KEY,
+  value DOUBLE
+) PARTITION BY RANGE (ts) EVERY (30, DAY);
+```
+
+一定期間でデータを自動削除する場合はGridDBの期限解放を設定します。
+入力コンテナに期限解放を設定します。
+
+``` example
+CREATE TABLE IF NOT EXISTS etl_input (
+  ts TIMESTAMP PRIMARY KEY,
+  value DOUBLE
+) USING TIMESERIES WITH (
+  expiration_type='PARTITION',
+  expiration_time=90,
+  expiration_time_unit='DAY'
+) PARTITION BY RANGE (ts) EVERY (30, DAY);
+```
+
+出力コンテナを作成します。
+
+``` example
+CREATE TABLE IF NOT EXISTS etl_output (
+  ts TIMESTAMP PRIMARY KEY,
+  value DOUBLE
+) PARTITION BY RANGE (ts) EVERY (30, DAY);
+```
+
+②時系列データ登録  
+集計対象のコンテナに時系列データを登録します。
+
+<a href="./img/process_summary1.png" data-lightbox="group"><img src="./img/process_summary1.png" width="512"></a>
+
+③データ取得と集計、集計結果の登録  
+登録した時系列データを取得して集計を行います。
+
+<a href="./img/process_summary2.png" data-lightbox="group"><img src="./img/process_summary2.png" width="768"></a>
+
+一定期間に対する集計を行う際は、GROUP BY RANGEと集計演算を組み合わせて、集計を行います。
+
+例を以下に示します。
+
+【例1】一定時間間隔の最大値を取得する例
+
+``` example
+名前: etl_input
+
+  ts                     value
+-----------------------+-------
+  2024-01-01T00:00:00       10
+  2024-01-01T00:00:10       30
+  2024-01-01T00:00:20       30
+  2024-01-01T00:00:30       50
+  2024-01-01T00:00:40       50
+  2024-01-01T00:00:50       70
 
 
+○集計演算
+SELECT ts,max(value) FROM etl_input
+  WHERE ts BETWEEN TIMESTAMP('2024-01-01T00:00:00Z') AND TIMESTAMP('2024-01-01T00:01:00Z')
+  GROUP BY RANGE(ts) EVERY (20,SECOND)
+
+  ts                     value
+-----------------------+-------
+  2024-01-01T00:00:00       30
+  2024-01-01T00:00:20       50
+  2024-01-01T00:00:40       70
+```
+
+【例2】一定時間間隔の最小値を取得する例
+
+``` example
+名前: etl_input
+
+  ts                     value
+-----------------------+-------
+  2024-01-01T00:00:00       10
+  2024-01-01T00:00:10       30
+  2024-01-01T00:00:20       30
+  2024-01-01T00:00:30       50
+  2024-01-01T00:00:40       50
+  2024-01-01T00:00:50       70
+
+
+○集計演算
+SELECT ts,min(value) FROM etl_input
+  WHERE ts BETWEEN TIMESTAMP('2024-01-01T00:00:00Z') AND TIMESTAMP('2024-01-01T00:01:00Z')
+  GROUP BY RANGE(ts) EVERY (20,SECOND)
+
+  ts                     value
+-----------------------+-------
+  2024-01-01T00:00:00       10
+  2024-01-01T00:00:20       30
+  2024-01-01T00:00:40       50
+```
+
+【例3】一定時間間隔の平均値を取得する例
+
+``` example
+名前: etl_input
+
+  ts                     value
+-----------------------+-------
+  2024-01-01T00:00:00       10
+  2024-01-01T00:00:10       30
+  2024-01-01T00:00:20       30
+  2024-01-01T00:00:30       50
+  2024-01-01T00:00:40       50
+  2024-01-01T00:00:50       70
+
+
+○集計演算
+SELECT ts,avg(value) FROM etl_input
+  WHERE ts BETWEEN TIMESTAMP('2024-01-01T00:00:00Z') AND TIMESTAMP('2024-01-01T00:01:00Z')
+  GROUP BY RANGE(ts) EVERY (20,SECOND)
+
+  ts                     value
+-----------------------+-------
+  2024-01-01T00:00:00       20
+  2024-01-01T00:00:20       40
+  2024-01-01T00:00:40       60
+```
+
+その他の集計関数は『[GridDB SQLリファレンス](../md_reference_sql/md_reference_sql.md)』を参照してください。
+
+集計した結果を出力コンテナに登録します。
+
+``` example
+INSERT INTO etl_output ts,value;
+```
+
+上記のデータ取得と集計、集計結果の登録を定期的に実行することで、自動集計を実現します。  
+定期実行については、Linuxのcronを利用します。
+
+### gs_sh スクリプトファイル
+
+集計処理をクラスタ運用管理コマンド・インタプリタ（gs_sh）のバッチモードを用いて実現します。
+
+gs_shで以下のようなバッチモードのスクリプトファイル(sample.gsh)を作成します。
+
+【例1】実行時刻に全データを処理対象にする
+``` example
+# gs_shスクリプトファイル(sample.gsh)
+
+# 存在しない場合はインターバルパーティショニング30日の出力コンテナを作成する
+CREATE TABLE IF NOT EXISTS etl_output (ts TIMESTAMP PRIMARY KEY, value DOUBLE)
+ PARTITION BY RANGE (ts) EVERY (30, DAY);
+
+# 登録済みの最終実行時刻を取得する。存在しない場合は今から1時間前の時刻を取得する。
+SELECT case when MAX(ts) ISNULL THEN TIMESTAMP_ADD(HOUR,NOW(),-1) else MAX(ts)
+ end AS lasttime FROM etl_output;
+
+# 取得した時刻を変数に格納する
+getval LastTime
+
+# 取得した時刻と今の時刻を集計範囲として20秒ごとの平均値を取得して、出力コンテナに登録または更新する
+INSERT OR REPLACE INTO etl_output (ts, value)
+ SELECT ts,avg(value) FROM etl_input
+ WHERE ts BETWEEN TIMESTAMP('$LastTime') AND NOW()
+ GROUP BY RANGE(ts) EVERY (20, SECOND);
+```
+
+【例2】集計範囲を時間単位に揃えて処理対象にする
+``` example
+# gs_shのスクリプトファイル(sample.gsh)
+
+# 存在しない場合はインターバルパーティショニング30日の出力コンテナを作成する
+CREATE TABLE IF NOT EXISTS etl_output (ts TIMESTAMP PRIMARY KEY, value DOUBLE)
+ PARTITION BY RANGE (ts) EVERY (30, DAY);
+
+# 登録済みの最終実行時刻を取得する。存在しない場合は時間単位(HH:00:00)に揃えて今から1時間前の時刻を取得する。
+SELECT case when MAX(ts) ISNULL THEN TIMESTAMP_TRUNC(HOUR, TIMESTAMP_ADD(HOUR,NOW(),-1)) else MAX(ts)
+ end AS lasttime FROM etl_output;
+
+# 取得した時刻を変数に格納する
+getval LastTime
+
+# 取得した時刻と時間単位に揃えた今の時刻を集計範囲として20秒ごとの平均値を取得して、出力コンテナに登録または更新する
+INSERT OR REPLACE INTO etl_output (ts, value)
+ SELECT ts,avg(value) FROM etl_input
+ WHERE ts BETWEEN TIMESTAMP('$LastTime') AND TIMESTAMP_TRUNC(HOUR, NOW())
+ GROUP BY RANGE(ts) EVERY (20, SECOND);
+```
+
+【例3】集計範囲を最終時刻+1時間にして処理対象にする
+``` example
+# gs_shのスクリプトファイル(sample.gsh)
+
+# 存在しない場合はインターバルパーティショニング30日の出力コンテナを作成する。
+CREATE TABLE IF NOT EXISTS etl_output (ts TIMESTAMP PRIMARY KEY, value DOUBLE)
+ PARTITION BY RANGE (ts) EVERY (30, DAY);
+
+# 登録済みの最終実行時刻を取得する。存在しない場合は時間単位(HH:00:00)に揃えて今から1時間前の時刻を取得する。
+SELECT case when MAX(ts) ISNULL THEN TIMESTAMP_TRUNC(HOUR, TIMESTAMP_ADD(HOUR,NOW(),-1)) else MAX(ts)
+ end AS lasttime FROM etl_output;
+
+# 取得した時刻を変数に格納する
+getval LastTime
+
+# 取得した時刻と取得した時間+1時間を集計範囲として20秒ごとの平均値を取得して、出力コンテナに登録または更新する
+INSERT OR REPLACE INTO etl_output (ts, value)
+ SELECT ts,avg(value) FROM etl_input
+ WHERE ts BETWEEN TIMESTAMP('$LastTime') AND  TIMESTAMP_ADD(HOUR, TIMESTAMP_TRUNC(HOUR, TIMESTAMP('$LastTime')),1)
+ GROUP BY RANGE(ts) EVERY (20, SECOND);
+```
+
+### 定期実行
+
+cronを用いて、定期実行を行います。
+1時間ごとに実行する場合はgsadmユーザで以下のようなcronを作成します。
+
+```example
+$ su - gsadm
+$ crontab -e
+
+0 * * * * gs_sh /var/lib/gridstore/sample.gsh
+```
+
+上記のようにcronとgshスクリプトを組み合わせて定期実行を実現します。
 
 <a id="label_parameters"></a>
 # パラメータ
@@ -4489,15 +4749,24 @@ GridDBの動作を制御するパラメータについて説明します。GridD
 | /dataStore/logWriteMode              | 1                          | ログ書き出しモード・周期を指定。 -1または0の場合トランザクション終了時にログ書き込み、1以上2<sup>31</sup>未満の場合、秒単位の周期でログ書き込み  | 起動       |
 | /dataStore/persistencyMode           | 1(NORMAL)                  | 永続化モードでは、データ更新時の更新ログファイルの保持期間を指定する。1(NORMAL)、2(KEEP_ALL_LOG)　のいずれかを指定。"NORMAL" は、チェックポイントにより、不要になったトランザクションログファイルは削除されます。"KEEP_ALL_LOG"は、全てのトランザクションログファイルを残します。 | 起動       |
 | /dataStore/affinityGroupSize         | 4                          | アフィニティグループ数                                                        | 起動       |
-| /dataStore/storeCompressionMode      | NO_COMPRESSION   | データブロック圧縮モード                                                                | 起動       |
+| /dataStore/storeCompressionMode      | NO_COMPRESSION   | データブロック圧縮モードの指定。以下の値を設定可能。<br>　・"NO_COMPRESSION"：圧縮機能を無効にします。 <br>　・"COMPRESSION_ZLIB"、"COMPRESSION"：ZLIB圧縮を有効にします。 <br>　・"COMPRESSION_ZSTD"：ZSTD圧縮を有効にします。| 起動       |
+| /dataStore/enableAutoArchive  | false                       | 自動アーカイブ機能を利用するか         | 起動       |
+| /dataStore/autoArchiveName  | ""                       | 自動アーカイブ名         | 起動       |
+| /dataStore/enableAutoArchiveOutputInfo  | true                       | 自動アーカイブ実行時のクラスタやチェックポイント実行に付随するメタ情報を出力するか。自動アーカイブ有効な場合のみ有効化         | 起動       |
+| /dataStore/enableAutoArchiveOutputInfoPath  | cluster                       | 自動アーカイブ実行時のクラスタやチェックポイント実行に付随するメタ情報を出力先フォルダ名         | 起動       |
 | /checkpoint/checkpointInterval       | 60秒                       | メモリ上のデータ更新ブロックを永続化するチェックポイント処理の実行周期         | 起動       |
 | /checkpoint/partialCheckpointInterval  | 10                       | チェックポイント実行時に、チェックポイントログファイルへブロック管理情報を書き込む処理の分割数          | 起動       |
 | /cluster/serviceAddress              | 上位のserviceAddressに従う | クラスタ構成用待ち受けアドレス                                            | 起動       |
 | /cluster/servicePort                 | 10010                      | クラスタ構成用待ち受けポート                                             | 起動       |
 | /cluster/notificationInterfaceAddress  | ""                       | マルチキャストパケットを送信するインターフェースのアドレスを指定 | 起動       |
 | /cluster/rackZoneId  | ""                       | 同一の可用性レベルを持つノードとしてグルーピングするための識別子 | 起動       |
+| /cluster/goalAssignmentRule  | DEFAULT                       | 新規構成検出時のクラスタパーティション配置表の割当規則。デフォルト(DEFAULT)、ラウンドロビン(ROUNDROBIN)のいずれかを指定 | 起動       |
+| /cluster/enableStableGoal  | false                       | クラスタパーティション配置表外部指定機能の利用有無 | 起動       |
+| /cluster/enableStandbyMode  | false                       | スタンバイモードを有効にするか | 起動       |
 | /sync/serviceAddress                 | 上位のserviceAddressに従う | クラスタ間でデータ同期のための受信アドレス                                 | 起動       |
 | /sync/servicePort                    | 10020                      | データ同期用待ち受けポート                                              | 起動       |
+| /sync/redoLogErrorKeepInterval                    | 600s                      | REDOエラー発生時の表示内容の保持期間(この期間を過ぎると自動削除) 
+| /sync/redoLogMaxMessageSize                    |      2097152                | REDO分割実行となるファイルサイズ単位。指定サイズを超えるまで対象ファイルからログ読み出し、レプリケーション、REDOを行う操作手順が分割実行される
 | /system/serviceAddress               | 上位のserviceAddressに従う | 運用コマンド用待ち受けアドレス                                           | 起動       |
 | /system/servicePort                  | 10040                      | 運用コマンド用待ち受けポート                                            | 起動       |
 | /system/eventLogPath                 | log                        | イベントログファイルの配置ディレクトリのパス                            | 起動       |
@@ -4525,7 +4794,8 @@ GridDBの動作を制御するパラメータについて説明します。GridD
 | /sql/traceLimitExecutionTime         | 300秒                      | スロークエリをイベントログに残す実行時間の下限値                           | オンライン |
 | /sql/traceLimitQuerySize             | 1000                       | スロークエリに残るクエリ文字列のサイズ上限(バイト)                         | オンライン |
 | /sql/notificationInterfaceAddress    | ""                         | マルチキャストパケットを送信するインターフェースのアドレスを指定                       | 起動       |
-| /sql/addBatchMaxCount             | 1000                       |   バッチ更新件数上限値                       | オンライン |
+| /sql/addBatchMaxCount             | 1000                       |   バッチ更新件数上限値                       | 起動 |
+| /sql/tablePartitioningMaxAssignNum             | 10000                       |   テーブルパーティショニング分割個数最大数                       | 起動 |
 | /trace/fileCount                     | 30                         | イベントログファイルの上限数                                                 | 起動       |
 | /security/userCacheSize |  1000       | キャッシュする一般ユーザ/LDAPユーザエントリ数を指定。 | 起動     |
 | /security/userCacheUpdateInterval |  60      | キャッシュの更新間隔（秒）を指定。| 起動     |
