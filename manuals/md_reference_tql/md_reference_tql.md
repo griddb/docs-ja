@@ -279,13 +279,69 @@ YYYY-MM-DDThh:mm:ss.SSSZ
 
 表現範囲については付録の*値の範囲*を参照してください。
 
+#### TIMESTAMP_MS(str)
+
+時刻の文字列表現をミリ秒精度のTIMESTAMP(3)型に変換します。
+
+時刻の文字列表現としては、西暦での次の形式のみをサポートします。タイムゾーン文字列(Z|±hh:mm|±hhmm)の指定が必須です。
+
+``` example
+YYYY-MM-DDThh:mm:ssZ
+YYYY-MM-DDThh:mm:ss.SSSZ
+```
+
+上の形式のうち、英字の部分は10進数表現の整数値です。「SSS」以外はTIMESTAMP(str)を参照してください。
+-   SSS: ミリ秒に相当する。常に3桁であり、0から999の範囲で指定する
+
+表現範囲については付録の*値の範囲*を参照してください。
+
+
+#### TIMESTAMP_US(str)
+
+時刻の文字列表現をマイクロ秒精度のTIMESTAMP(6)型に変換します。
+
+時刻の文字列表現としては、西暦での次の形式のみをサポートします。タイムゾーン文字列(Z|±hh:mm|±hhmm)の指定が必須です。
+
+``` example
+YYYY-MM-DDThh:mm:ssZ
+YYYY-MM-DDThh:mm:ss.SSSZ
+YYYY-MM-DDThh:mm:ss.SSSSSSZ
+```
+
+上の形式のうち、英字の部分は10進数表現の整数値です。「SSS」「SSSSSS」以外はTIMESTAMP(str)を参照してください。
+-   SSS: ミリ秒に相当する。常に3桁であり、0から999の範囲で指定する
+-   SSSSSS: マイクロ秒に相当する。常に6桁であり、0から999999の範囲で指定する
+
+表現範囲については付録の*値の範囲*を参照してください。
+
+#### TIMESTAMP_NS(str)
+
+時刻の文字列表現をナノ秒精度のTIMESTAMP(9)型に変換します。
+
+時刻の文字列表現としては、西暦での次の形式のみをサポートします。タイムゾーン文字列(Z|±hh:mm|±hhmm)の指定が必須です。
+
+``` example
+YYYY-MM-DDThh:mm:ssZ
+YYYY-MM-DDThh:mm:ss.SSSZ
+YYYY-MM-DDThh:mm:ss.SSSSSSZ
+YYYY-MM-DDThh:mm:ss.SSSSSSSSSZ
+```
+
+上の形式のうち、英字の部分は10進数表現の整数値です。「SSS」、「SSSSSS」、「SSSSSSSSS」以外はTIMESTAMP(str)を参照してください。
+-   SSS: ミリ秒に相当する。常に3桁であり、0から999の範囲で指定する
+-   SSSSSS: マイクロ秒に相当する。常に6桁であり、0から999,999の範囲で指定する
+-   SSSSSSSSS: ナノ秒に相当する。常に9桁であり、0から999,999,999の範囲で指定する
+
+表現範囲については付録の*値の範囲*を参照してください。
+
+#### TIMESTAMP_ADD(time_unit, timestamp, duration)
 #### TIMESTAMPADD(time_unit, timestamp, duration)
 
-指定の時刻に対し、指定した単位の特定の期間を加算します。期間には数値型の値を指定します。負の値の期間を指定した場合は、元の時刻より過去の時刻が求まります。現バージョンでは、算出の際に使用されるタイムゾーンはUTCです。
+指定の時刻に対し、指定した単位の特定の期間を加算します。期間には数値型の値を指定します。負の値の期間を指定した場合は、元の時刻より過去の時刻が求まります。現バージョンでは、算出の際に使用されるタイムゾーンはクライアント接続設定に従います(デフォルト:UTC)。関数ごとの個別指定はできません。
 
 第一引数time_unitには、次のいずれかの識別子を指定します。
-- YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECOND
-
+- YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECOND | MICROSECOND | NANOSECOND
+  - NANOSECONDを指定した場合、期間には約292年(2^63ナノ秒)以上の値は指定できません
 
 例) 時刻型のカラムdateの値が、現在時刻から1時間前の時刻よりも前のデータを検索する
 
@@ -294,12 +350,14 @@ SELECT * WHERE date < TIMESTAMPADD(HOUR, NOW(), -1)
 ```
 
 
+#### TIMESTAMP_DIFF(time_unit, timestamp1, timestamp2)
 #### TIMESTAMPDIFF(time_unit, timestamp1, timestamp2)
 
-2つの時刻の差について、指定した単位で結果を求めます。結果は数値型の値となります。現バージョンでは、算出の際に使用されるタイムゾーンはUTCです。
+2つの時刻の差について、指定した単位で結果を求めます。結果は数値型の値となります。現バージョンでは、算出の際に使用されるタイムゾーンはクライアント接続設定に従います(デフォルト:UTC)。関数ごとの個別指定はできません。
 
 第一引数time_unitには、次のいずれかの識別子を指定します。
-- YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECOND
+- YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECOND | MICROSECOND | NANOSECOND
+  - NANOSECONDを指定した場合、計算結果が約292年(2^63ナノ秒)を超えると関数実行時にエラーが発生します。
 
 例) 時刻型のカラムexpiredとissuedの差(=expired-issued)が3日以上のデータを検索する
 

@@ -1128,7 +1128,7 @@ ResultSetMetaDataインターフェースで、カラムのデータ型を返す
 | int getColumnDisplaySize(int column)      | 131072                       |
 | String getColumnLabel(int column)         | カラムのラベル名              |
 | String getColumnName(int column)          | カラムの名前                  |
-| int getPrecision(int column)              | TIMESTAMP型の場合は9(最大精度ナノ秒の小数部桁数)、他の型の場合は0         |
+| int getPrecision(int column)              | TIMESTAMP(3)の場合は3、TIMESTAMP(6)の場合は6、TIMESTAMP(9)の場合は9、他の型の場合は0 |
 | int getScale(int column)                  | 0                            |
 | String getSchemaName(int column)          | ""                           |
 | String getTableName(int column)           | ""                           |
@@ -1136,7 +1136,7 @@ ResultSetMetaDataインターフェースで、カラムのデータ型を返す
 | boolean isCaseSensitive(int column)       | true                         |
 | boolean isCurrency(int column)            | false                        |
 | boolean isDefinitelyWritable(int column)  | true                         |
-| int isNullable(int column)                | カラムにNULL値を許可する定数ResultSetMetaData.columnNullable(=1)、またはカラムにNULL値を許可しない定数columnNoNulls(=0)  |
+| int isNullable(int column)                | カラムにNULL値を許可する定数ResultSetMetaData.columnNullable(=1)、またはカラムにNULL値を許可しない定数columnNoNulls(=0) |
 | boolean isReadOnly(int column)            | false                        |
 | boolean isSearchable(int column)          | true                         |
 | boolean isSigned(int column)              | false                        |

@@ -126,8 +126,7 @@ NoSQLインターフェースのクライアントで作成したコンテナを
 
 
 【メモ】
-   - TIMESTAMP型については、SQLの精度指定付きTIMESTAMP型の精度指定値(TIMESTAMP(p)のp)を確認したうえで、NoSQLのTIMESTAMP型の精度指定情報を設定する必要があります。精度情報の設定方法については『[GridDB Java APIリファレンス](../md_reference_java_api/md_reference_java_api.html)』
-、もしくは『[GridDB C APIリファレンス](../md_reference_c_api/md_reference_c_api.html)』を参照してください。  
+   - TIMESTAMP型については、SQLの精度指定付きTIMESTAMP型の精度指定値(TIMESTAMP(p)のp)を確認したうえで、NoSQLのTIMESTAMP型の精度指定情報を設定する必要があります。精度情報の設定方法については『[GridDB Java APIリファレンス](../md_reference_java_api/md_reference_java_api.html)』、もしくは『[GridDB C APIリファレンス](../md_reference_c_api/md_reference_c_api.html)』を参照してください。  
    
 ### SQLでサポートしていないデータ型の扱い
 
@@ -413,7 +412,7 @@ GridDBのユーザには、管理ユーザと一般ユーザの2種類があり�
 【メモ】
  - 時系列コンテナの場合、ロウキーはミリ秒精度のTIMESTAMP型に固定されていて、他の精度のTIMESTAMP型には変更はできません。
 
-****データパーティション配置***
+***データパーティション配置***
 - 各日付に対応するデータパーティションの配置先を決定するオプションを" WITH (プロパティキー=プロパティ値, ...)"の形式で以下の値で指定することができます。
 
   | 機能                | 内容                                         | プロパティキー        | プロパティ値の型   | 設定時の必須項目 |
@@ -1201,10 +1200,36 @@ SELECT * FROM employees NATURAL INNER JOIN departments;
 
 |                                   |
 |-----------------------------------|
-| *関数*　OVER ( \[PARTITION BY *式1* \] \[ORDER BY *式2* \] )     |
+| *関数*　OVER ( \[PARTITION BY *式1* \] \[ ORDER BY *式2* \] \[ FRAME句 \] ) |
+
+ここで、FRAME句の構文は以下の通りです。
+
+|                                   |
+|-----------------------------------|
+| {ROWS\|RANGE} *フレーム開始値* <br>\| {ROWS\|RANGE} BETWEEN *フレーム開始値* AND *フレーム終了値* |
+
+フレーム開始値・終了値の構文は以下の通りです。
+|                                   |
+|-----------------------------------|
+| UNBOUNDED PRECEDING <br>\| UNBOUNDED FOLLOWING <br>\| CURRENT ROW <br>\| *フレーム境界値1* PRECEDING <br>\| *フレーム境界値2* FOLLOWING |
+
+  - CURRENT ROW: 分析対象の現在位置のロウを示します
+  - UNBOUNDED: パーティションの先頭もしくは末端を示します
+  - PRECEDING/FOLLOWING: 前方もしくは後方を示します
+  - UNBOUNDEDは、始点・終点での前方・後方指定の組み合わせに制限があります (NG例: BETWEEN UNBOUNDED FOLLOWING AND ～、BETWEEN UNBOUNDED ～ AND PRECEDING)
+
+フレーム境界値の構文は以下の通りです。
+
+|                                   |
+|-----------------------------------|
+| *値1* \| ( *値2*, *単位* ) |
+
+  - 以下の説明では前者を整数型境界値、後者を日時型境界値と呼びます
+  - 値1、値2として許されるのは、非負の整数値定数に暗黙キャスト可能な値のみです。日時型境界値ではHOUR～NANOSECONDまでのいずれかの単位を指定します
+  - ROWS指定の場合、非負の整数型境界値のみ指定可能です
+  - RANGE指定の場合、ソートキーは整数型または日時型の単一のキー限定とし、キーの型と対応する形式で境界値を指定します
 
 **仕様**
-
 
 - SELECT句で利用できます。
 - 対応する関数は以下です。
@@ -1223,7 +1248,7 @@ SELECT * FROM employees NATURAL INNER JOIN departments;
   - VARIANCE()/VARIANCE0()
   - VAR_POP()
 - 関数の第一引数にDISTINCTを指定することはできません。
-- PARTITION BY句で問い合わせ結果を分割します。ORDER BY句でロウの並び替えを行います。
+- PARTITION BY句で問い合わせ結果を分割します。ORDER BY句でロウの並び替えを行います。FRAME句はパーティション全体ではなくフレーム上で作動するウィンドウ関数に対して、ウィンドウフレームを構成する行の集合を指定します。
 - 同一SELECT句内でのWINDOW関数/OVER句の複数利用や、WINDOW関数/OVER句とMEDIAN関数の同時利用はできません。
 - PARTITION BY句に、以下の式は指定できません。
   - OVER句を含む式
@@ -1235,6 +1260,10 @@ SELECT * FROM employees NATURAL INNER JOIN departments;
   - 集計関数を含む式
   - 列の別名を含む式
   - サブクエリ
+- 同名の集計関数と対応づく既存の分析関数すべてで、FRAME句を指定できます。
+  - AVG、COUNT、MAX、MIN、SUM、TOTAL、STDDEV*、VAR*
+- 同名の集計関数と対応付かない以下の分析関数では、FRAME句を指定できません。
+  - ROW_NUMBER、LAG、LEAD
 
 
 ### GROUP BY RANGE
@@ -1268,11 +1297,13 @@ GROUP BY RANGE句の仕様は以下となります。
   - 結果集合の始点時刻を計算するときに用いる「時間の間隔」は、*時間間隔*と*単位*で指定されます。以下のように設定できます。
     + *時間間隔*は、正の整数値を指定できます。定数値のみ指定可能です。
     + *単位*には、以下のいずれかを指定できます。
-      * DAY | HOUR | MINUTE | SECOND | MILLISECOND
+      * DAY | HOUR | MINUTE | SECOND | MILLISECOND | MICROSECOND | NANOSECOND
+      * ナノ秒精度の場合、約292年(2^63ナノ秒)以上の時間間隔は指定できません。
 - 得られた結果集合内にひとつも値が含まれない場合、その区間の値を補間演算により求めることができます。値の求め方(補間演算の方法)は*補間方法*で指定します。
   + *補間方法*には、以下のいずれかを指定できます。
     * LINEAR　：直近の前後の時刻のカラム値を用いて線形補間して出力します。
       + ただし、数値演算できない型のカラムの場合は、以下のPREVIOUS演算と同じ補間を行います。
+      + ナノ秒精度での演算結果として292年を超過する場合、関数実行のエラーになります。
     * NONE　　：ロウ全体を出力しません。
     * NULL　　：カラム値をNULLとします。
     * PREVIOUS：直近の前の時刻のカラム値を出力します。
@@ -1503,6 +1534,9 @@ SQL文には以下の関数が用意されています。
 |      | [EXTRACT](#extract)                 | 時刻から特定のフィールドの値を取り出します    |
 |      | [STRFTIME](#strftime)               | 時刻をフォーマット変換した文字列を返します    |
 |      | [MAKE_TIMESTAMP](#make_timestamp)   | 時刻を生成します    |
+|      | [MAKE_TIMESTAMP_MS](#make_timestamp_ms)   | ミリ秒精度のTIMESTAMP(3)型の時刻を生成します    |
+|      | [MAKE_TIMESTAMP_US](#make_timestamp_us)   | マイクロ秒精度のTIMESTAMP(6)型の時刻を生成します    |
+|      | [MAKE_TIMESTAMP_NS](#make_timestamp_ns)   | ナノ秒精度のTIMESTAMP(9)型の時刻を生成します    |
 |      | [TIMESTAMP_TRUNC](#timestamp_trunc) | 時刻を切り捨てます    |
 | [WINDOW](#window_function) | [ROW_NUMBER](#row_number)       | 結果のロウに対して、一意となる連番値を割り振ります       |
 | [その他](#other_function) | [COALESCE](#coalesce)      | NULLではない最初の引数を返します     |
@@ -2865,7 +2899,7 @@ SELECT * FROM timeseries WHERE date > TIMESTAMP('2018-12-01T10:30:00Z');
 
 - 引数*timezone*には、タイムゾーン(Z|±hh:mm|±hhmm)を指定します。*timestamp_string*にタイムゾーン情報が含まれる場合は指定する必要はありません。指定して矛盾がある場合はエラーが返ります。
 - 接続時にタイムゾーンが指定されている場合、オフセット計算された値が返ります。
-- 結果の型はマイクロ秒精度のTIMESTAMP(9)型です。
+- 結果の型はナノ秒精度のTIMESTAMP(9)型です。
 - TIMESTAMP_NS関数の逆変換(ナノ秒精度のTIMESTAMP(9)型から文字列型への変換)は、[CAST](#cast)を用いてください。
   + CAST(*timestamp* AS STRING)
 
@@ -2880,8 +2914,9 @@ SELECT * FROM timeseries WHERE date > TIMESTAMP('2018-12-01T10:30:00Z');
 
 - 引数*timestamp*には、TIMESTAMP型の値を指定します。また、精度値指定付きTIMESTAMP型も指定できます。
 - 引数*duration*には、整数を指定します。負の数を指定した場合は、時刻を減算します。
+  - ナノ秒精度の場合、約292年(2^63ナノ秒)以上の日時間隔は指定できません。
 - 引数*time_unit*には、次のいずれかの識別子を指定します。
-  - YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECOND
+  - YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECOND | MICROSECOND | NANOSECOND
 - 引数*timezone*には、タイムゾーン(Z|±hh:mm|±hhmm)を指定します。
 - 年もしくは月の加算によって算出された月に同一日が存在しない場合、日はその月の最終日に丸められます。例えば5月31日に1月加算すると、6月31日は存在しないため6月30日に丸められます。
 - 接続時にタイムゾーンが指定されている場合、オフセット計算された値が返ります。
@@ -2902,8 +2937,6 @@ SELECT TIMESTAMP_ADD(MONTH, TIMESTAMP('2019-05-31T01:23:45.678Z'), 1, '-02:00');
 
 ```
 
- - 時間単位*time_unit*の指定はMILLISECONDまでです。
-
 
 #### TIMESTAMP_DIFF
 
@@ -2916,7 +2949,8 @@ SELECT TIMESTAMP_ADD(MONTH, TIMESTAMP('2019-05-31T01:23:45.678Z'), 1, '-02:00');
 
 - 引数*timestamp1*と*timestamp2*には、TIMESTAMP型の値を指定します。また、精度値指定付きTIMESTAMP型も指定できます。
 - 引数*time_unit*には、次のいずれかの識別子を指定します。識別子で指定の単位のみの差分を計算するのではなく、識別子未満の単位も計算に利用されます。例えばMONTH指定で2019/09/30と2019/10/02を比較する場合、0ヶ月2日が差分となるため、出力は1ではなく0となります。
-  - YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECOND
+  - YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECOND | MICROSECOND | NANOSECOND
+  - 時間単位*time_unit*としてナノ秒単位の精度を指定した場合、計算結果が約292年(2^63ナノ秒)を超えると関数実行時にエラーが発生します。
 - 引数*timezone*には、タイムゾーン(Z|±hh:mm|±hhmm)を指定します。
 - 接続時にタイムゾーンが指定されている場合、オフセット計算された値が差分計算に利用されます。
 - 結果の型はLONG型です。
@@ -2951,10 +2985,6 @@ SELECT TIMESTAMP_DIFF(MONTH, MAKE_TIMESTAMP(2019, 8, 1), MAKE_TIMESTAMP(2019, 6,
 結果：1
 
 ```
-
-【メモ】
-- 時間単位*time_unit*の指定は、MILLISECONDまでです。
-
 
 #### TO_TIMESTAMP_MS
 
@@ -3017,7 +3047,7 @@ SELECT TO_EPOCH_MS(TIMESTAMP('2020-12-31T23:59:59.999+09:00'));
   - YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECOND | MICROSECOND | NANOSECOND | DAY_OF_WEEK | DAY_OF_YEAR
     - DAY_OF_WEEKは日曜が始点で0、土曜が終点で6となります。
     - DAY_OF_YEARは1月1日が始点で1、12月31日が終点で365または366となります。
-    - MILISECOND,MICROSECOND,NANOSECONDを指定した場合、いずれも時刻の小数部全てを含む値になります。
+    - MILLISECOND,MICROSECOND,NANOSECONDを指定した場合、いずれも時刻の小数部全てを含む値になります。
 - 引数*timezone*には、タイムゾーン(Z|±hh:mm|±hhmm)を指定します。
 - 接続時にタイムゾーンが指定されている場合、オフセット計算された値が返ります。引数*timezone*と両方で指定されている場合は引数で指定したものが利用されます。
 - 結果の型はLONG型です。
@@ -3100,7 +3130,7 @@ TIMESTAMP型の値を生成して返します。
 
 - 引数*hour*, *min*, *sec*を指定しない場合は、全て0を指定したものとみなします。
 - 引数*sec*には、ミリ秒単位の指定が可能です。ミリ秒未満は四捨五入した値に丸められますが、浮動小数点演算の仕組みに基づく誤差が生じる可能性があります。
-- 引数*timezone*には、タイムゾーン(Z|±hh:mm|±hhmm)を指定します。
+- 引数*timezone*には、タイムゾーン(Z|±hh:mm|±hhmm)を指定します。省略時は、クライアント接続設定のタイムゾーンに従います(デフォルト:UTC)。
 - 結果の型はTIMESTAMP型(ミリ秒精度)です。
 
 例)
@@ -3113,6 +3143,42 @@ SELECT MAKE_TIMESTAMP(2019, 9, 19, 10, 30, 15.123, '+09:00');
 結果：2019-09-19T01:30:15.123Z
 
 ```
+
+#### MAKE_TIMESTAMP_MS
+
+|      |      |
+|------|-------|
+| 書式 | MAKE_TIMESTAMP_MS(year, month, day, sec, fraction [, timezone])|
+
+ミリ秒精度のTIMESTAMP(3)型の値を生成して返します。
+
+- 引数*fraction*には、秒単位未満の小数部のフィールド値を指定します。指定可能な値の範囲は0～999です。
+- 引数*timezone*には、タイムゾーン(Z|±hh:mm|±hhmm)を指定します。省略時は、クライアント接続設定のタイムゾーンに従います(デフォルト:UTC)。
+- 結果の型はミリ秒精度のTIMESTAMP(3)型です。
+
+#### MAKE_TIMESTAMP_US
+
+|      |      |
+|------|-------|
+| 書式 | MAKE_TIMESTAMP_US(year, month, day, sec, fraction [, timezone])|
+
+マイクロ秒精度のTIMESTAMP(6)型の値を生成して返します。
+
+- 引数*fraction*には、秒単位未満の小数部のフィールド値を指定します。指定可能な値の範囲は0～999,999です。
+- 引数*timezone*には、タイムゾーン(Z|±hh:mm|±hhmm)を指定します。省略時は、クライアント接続設定のタイムゾーンに従います(デフォルト:UTC)。
+- 結果の型はマイクロ秒精度のTIMESTAMP(6)型です。
+
+#### MAKE_TIMESTAMP_NS
+
+|      |      |
+|------|-------|
+| 書式 | MAKE_TIMESTAMP_NS(year, month, day, sec, fraction [, timezone])|
+
+ナノ秒精度のTIMESTAMP(9)型の値を生成して返します。
+
+- 引数*fraction*には、秒単位未満の小数部のフィールド値を指定します。指定可能な値の範囲は0～999,999,999です。
+- 引数*timezone*には、タイムゾーン(Z|±hh:mm|±hhmm)を指定します。省略時は、クライアント接続設定のタイムゾーンに従います(デフォルト:UTC)。
+- 結果の型はナノ秒精度のTIMESTAMP(9)型です。
 
 #### TIMESTAMP_TRUNC
 
@@ -3842,6 +3908,7 @@ FROM employees;
 
 GridDBでは、実行計画を示すヒントをクエリに指定することで、SQL文を変えることなく実行計画を制御できます。
 
+『[GridDB SQLチューニングガイド](../md_sql_tuning_guide/md_sql_tuning_guide.md)』を参照して、ヒント句を用いたチューニングを行ってください。
 
 
 
@@ -4165,6 +4232,8 @@ CREATION_TIME             NODE_ADDRESS   NODE_PORT  APPLICATION_NAME
 | SQL_TASK_COUNT | 実行中SQLタスク総数 | LONG |
 | SQL_PENDING_JOB_COUNT | 送信抑制により停止中のSQLジョブ数 | LONG |
 | SQL_SEND_MESSAGE_SIZE | SQL送信メッセージサイズ | LONG |
+| SQL_TOTAL_REQUEST_COUNT | SQL累計リクエスト数 | LONG |
+| TRANSACTION_TOTAL_REQUEST_COUNT | トランザクション累計リクエスト数 | LONG |
 
 【メモ】
  - データベース管理者は全てのデータベースを横断した情報を取得できます。
@@ -4172,6 +4241,91 @@ CREATION_TIME             NODE_ADDRESS   NODE_PORT  APPLICATION_NAME
  - ※の項目の正確な値を表示させるためには起動ファイルでの設定が必要となります。
  - 各統計値の項目の詳細および設定方法については『[GridDB 機能リファレンス](../md_reference_feature/md_reference_feature.md)』を参照してください。
 
+
+## 実行中のステートメント(SQL)のリソース統計
+
+実行中の処理のリソース消費統計値について、各ノードのステートメント(本バージョンではSQL限定)ごとに1つの行で示すメタテーブルとして取得できます。
+
+**テーブル名**
+
+\#statement_resources
+
+**スキーマ**
+
+| 列名 | 内容 | 型 |
+|------|-----------------------------------------------------|---------|
+|REQUEST_ID|リクエストID(クエリID)|STRING|
+|NODE_ADDRESS|処理実行中のノードのアドレス(system)|STRING|
+|NODE_PORT|処理実行中のノードのポート(system)|INTEGER|
+|CONNECTION_ADDRESS|クライアントのアドレス ※本バージョンでは常にNULL|STRING|
+|CONNECTION_PORT|クライアントのポート ※本バージョンでは常にNULL|INTEGER|
+|USER_NAME|ユーザ名|STRING|
+|APPLICATION_NAME|アプリケーション名|STRING|
+|STATEMENT_TYPE|ステートメント種別 ※本バージョンでは常に'SQL_EXECUTE'|STRING|
+|START_TIME|処理開始時刻|TIMESTAMP|
+|ACTUAL_TIME|実処理時間(単位:ミリ秒) ※本バージョンでは処理開始時刻から経過時刻と等価|LONG|
+|MEMORY_USE|メモリ使用量(単位:バイト)|LONG|
+|DATA_STORE_ACCESS|データストアのアクセス量(単位:バイト)|LONG|
+|SQL_STORE_USE|SQL中間ストアの使用量(単位:バイト)|LONG|
+|NETWORK_TRANSFER_SIZE|ネットワーク転送量(単位:バイト) ※本バージョンでは常に0|LONG|
+|NETWORK_TIME|ネットワーク転送時間(単位:ミリ秒) ※本バージョンでは常に0|LONG|
+|AVAILABLE_CONCURRENCY|処理に利用可能な並列スレッド数 ※本バージョンでは常に0|LONG|
+|RESOURCE_RESTRICTIONS|リソース制限事項一覧 ※本バージョンでは常に空文字列|STRING|
+|STATEMENT|ステートメント内容(例:SQL文) ※本バージョンでは常にNULL|STRING|
+
+## 実行中の分散タスクのリソース統計
+
+実行中の処理のリソース消費統計値について、各ノードのステートメント(本バージョンではSQL限定)内の分散タスクごとに1つの行で示すメタテーブルとして取得できます。
+
+**テーブル名**
+
+\#task_resources
+
+**スキーマ**
+
+| 列名 | 内容 | 型 |
+|------|-----------------------------------------------------|---------|
+|REQUEST_ID|リクエストID(クエリID)|STRING|
+|JOB_ORDINAL|一つの要求IDに対応する、実行ジョブの順序番号|LONG|
+|TASK_ORDINAL|一つの実行ジョブに対応する、分散タスクの順序番号|INTEGER|
+|NODE_ADDRESS|処理実行中のノードのアドレス(system)|STRING|
+|NODE_PORT|処理実行中のノードのポート(system)|INTEGER|
+|TASK_TYPE|タスク種別(例:SCAN、JOINなど)|STRING|
+|LEAD_TIME|実行開始後の経過時間(単位:ミリ秒)|LONG|
+|ACTUAL_TIME|実処理時間(単位:ミリ秒)|LONG|
+|MEMORY_USE|メモリ使用量(単位:バイト)|LONG|
+|DATA_STORE_ACCESS|データストアのアクセス量(単位:バイト)|LONG|
+|SQL_STORE_USE|SQL中間ストアの使用量(単位:バイト)|LONG|
+|NETWORK_TRANSFER_SIZE|ネットワーク転送量(単位:バイト) ※本バージョンでは常に0|LONG|
+|NETWORK_TIME|ネットワーク転送時間(単位:ミリ秒) ※本バージョンでは常に0|LONG|
+|PLAN|プラン内容を示すJSON文字列 ※本バージョンでは常にNULL|STRING|
+
+
+## サイト間レプリケーション状態
+
+サイト間レプリケーション状態をメタテーブルとして取得できます。
+
+**テーブル名**
+
+\#replication_stats
+
+**スキーマ**
+
+| 列名 | 内容 | 型 |
+|------|-----------------------------------------------------|---------|
+|CLUSTER_PARTITION_INDEX|クラスタパーティション番号|INTEGER|
+|CLUSTER_REPLICATION_ROLE|サイト間レプリケーションのロール|STRING|
+|PRIMARY_ADDRESS|プライマリのオーナーアドレス|STRING|
+|PRIMARY_PORT|プライマリのオーナーポート|INTEGER|
+|STANDBY_ADDRESS|スタンバイのオーナーアドレス|STRING|
+|STANDBY_PORT|スタンバイのオーナーポート|INTEGER|
+|PRIMARY_LSN|プライマリのLSN|LONG|
+|STANDBY_LSN|スタンバイのLSN（ログシーケンス番号）|LONG|
+|PRIMARY_LAST_UPDATED_TIME|プライマリの最終更新時刻|TIMESTAMP|
+|STANDBY_LAST_UPDATED_TIME|スタンバイの最終更新時刻|TIMESTAMP|
+|REPLICATION_STATUS|レプリケーション状態|STRING|
+|LAST_ERROR_CODE|最後に発生したエラーコード|LONG|
+|LAST_ERROR_TIME|最後に発生したエラー時刻|TIMESTAMP|
 
 # 予約語
 
