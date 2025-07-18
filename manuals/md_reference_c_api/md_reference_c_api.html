@@ -8844,10 +8844,10 @@ Functions</h2><div class="summary"><a href="#group___group___g_s_grid_store_fact
 <td>password </td><td>ユーザ認証用のパスワード</td></tr>
 <tr>
 <td>consistency </td><td>一貫性レベル。次のいずれかの文字列を指定できる。<dl>
-<dt><code>"IMMEDIATE"</code>  </dt>
+<dt><code><code>"IMMEDIATE"</code> </code> </dt>
 <dd>他のクライアントからの更新結果は、該当トランザクションの完了後即座に反映される</dd>
-<dt><code>"EVENTUAL"</code>  </dt>
-<dd>他のクライアントからの更新結果は、該当トランザクションが完了した後でも反映されない場合がある。Containerに対する更新操作は実行できない</dd>
+<dt><code><code>"EVENTUAL"</code> </code> </dt>
+<dd>他のクライアントからの更新結果は、該当トランザクションが完了した後でも反映されない場合がある。<a class="el" href="#group___group___g_s_container.html__gacaac47e5707f95f62fb35ce2662f1052">GSContainer</a>に対する更新操作は実行できない</dd>
 </dl>
 省略時は<code>"IMMEDIATE"</code>が指定されたものとみなされる</td></tr>
 <tr>
@@ -8866,25 +8866,25 @@ Functions</h2><div class="summary"><a href="#group___group___g_s_grid_store_fact
 <td>timeZone </td><td>タイムゾーン情報。TQLでのTIMESTAMP値演算などに使用される。「<code>±hh:mm</code>」または「<code>±hhmm</code>」形式によるオフセット値(<code>±</code>は<code>+</code>または<code>-</code>、<code>hh</code>は時、<code>mm</code>は分)、「<code>Z</code>」(<code>+00</code>:00に相当)、「<code>auto</code>」(実行環境に応じ自動設定)のいずれかを指定する。<code>auto</code>が使用できるのは夏時間を持たないタイムゾーンに限定される。バージョン4.3よりサポート</td></tr>
 <tr>
 <td>authentication </td><td>認証種別。次のいずれかの文字列を指定できる。<dl>
-<dt><code>"INTERNAL"</code>  </dt>
+<dt><code><code>"INTERNAL"</code> </code> </dt>
 <dd>クラスタ上で管理されているアカウント情報に基づいた、内部認証</dd>
-<dt><code>"LDAP"</code>  </dt>
+<dt><code><code>"LDAP"</code> </code> </dt>
 <dd>クラスタ外にあるLDAPサーバで管理されているアカウント情報に基づいた、外部認証。LDAP接続設定のないクラスタに接続する場合、もしくは、管理ユーザを使用する場合は指定できない</dd>
 </dl>
 省略時は自動的に認証種別が選択される。原則として指定は不要。非管理ユーザについて内部認証と外部認証を併用するクラスタへの接続の際に、内部認証を用いる場合などに指定する。バージョン4.5よりサポート</td></tr>
 <tr>
 <td>sslMode </td><td>クラスタへの接続においてSSLの使用有無の判断に用いられるモード。次のいずれかの文字列を指定できる。<dl>
-<dt><code>"DISABLED"</code>  </dt>
+<dt><code><code>"DISABLED"</code> </code> </dt>
 <dd>SSLを常に使用しない</dd>
-<dt><code>"PREFERRED"</code>  </dt>
+<dt><code><code>"PREFERRED"</code> </code> </dt>
 <dd>可能な限りSSLを使用する。SSL接続・非SSL接続共に使用できる場合はSSL接続を使用する</dd>
-<dt><code>"VERIFY"</code>  </dt>
+<dt><code><code>"VERIFY"</code> </code> </dt>
 <dd>SSLを常に使用する。サーバ検証あり</dd>
 </dl>
-SSL接続を選択できる環境設定(詳細: <a class="el" href="#group___group___g_s_grid_store_factory.html__gad9aa07be7b7ef7b297593f9f0525e67f">GSGridStoreFactory</a>)の場合のみ指定できる。それ以外の場合は、プロパティの値によらず指定できない。SSL接続を選択できる場合、省略時は<code>"PREFERRED"</code>が指定されたものとみなされる。バージョン4.5よりサポート。VERIFYはバージョン4.6よりサポート。</td></tr>
+SSL接続を選択できる環境設定(詳細: <a class="el" href="#group___group___g_s_grid_store_factory.html__gad9aa07be7b7ef7b297593f9f0525e67f">GSGridStoreFactory</a>)の場合のみ指定できる。それ以外の場合は、プロパティの値によらず指定できない。SSL接続を選択できる場合、省略時は<code>"PREFERRED"</code>が指定されたものとみなされる。バージョン4.5よりサポート。<code>"VERIFY"</code>はバージョン4.6よりサポート。</td></tr>
 <tr>
 <td>connectionRoute </td><td>クラスタ接続時における通信経路。次の文字列を指定できる。<dl>
-<dt><code>"PUBLIC"</code>  </dt>
+<dt><code><code>"PUBLIC"</code> </code> </dt>
 <dd>クラスタの外部通信経路が設定されている場合に、外部通信経路を経由した接続を行う</dd>
 </dl>
 省略時は通常のクラスタ通信経路を用いた接続が行われる。外部接続が必要な場合のみ指定する。バージョン5.1.1よりサポート</td></tr>
@@ -12820,7 +12820,7 @@ Functions</h2><div class="summary"><a href="#group___group___g_s_row_key_predica
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">predicate</td><td>処理対象の<a class="el" href="#group___group___g_s_row_key_predicate.html__ga5e23b8d4106831351b6d134b3d7d2772">GSRowKeyPredicate</a> </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>個別条件の要素の一つとするロウキーの値終了位置とするロウキーの値。<code>NULL</code>の場合、設定が解除されます</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>個別条件の要素の一つとするロウキーの値</td></tr>
   </table>
   </dd>
 </dl>
@@ -12863,7 +12863,7 @@ Functions</h2><div class="summary"><a href="#group___group___g_s_row_key_predica
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">predicate</td><td>処理対象の<a class="el" href="#group___group___g_s_row_key_predicate.html__ga5e23b8d4106831351b6d134b3d7d2772">GSRowKeyPredicate</a> </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>個別条件の要素の一つとするロウキーの値終了位置とするロウキーの値。<code>NULL</code>の場合、設定が解除されます</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>個別条件の要素の一つとするロウキーの値</td></tr>
   </table>
   </dd>
 </dl>
@@ -12906,14 +12906,14 @@ Functions</h2><div class="summary"><a href="#group___group___g_s_row_key_predica
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">predicate</td><td>処理対象の<a class="el" href="#group___group___g_s_row_key_predicate.html__ga5e23b8d4106831351b6d134b3d7d2772">GSRowKeyPredicate</a> </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>個別条件の要素の一つとするロウキーの値終了位置とするロウキーの値。<code>NULL</code>の場合、設定が解除されます</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>個別条件の要素の一つとするロウキーの値</td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>実行結果のコード番号。次の場合、<a class="el" href="#group___group___basic_definitions.html__ga1abfccde27161c3b8cb20d9532a41006">GS_RESULT_OK</a>以外の値を返します。<ul>
 <li>ポインタ型引数に<code>NULL</code>が指定された場合</li>
 <li>個別条件がすでに設定されていた場合</li>
-<li>期待した型・精度種別が合致条件の評価対象とするロウキーの型と異なる場合</li>
+<li>期待した型・精度種別が合致条件の評価対象とするロウキーのものと異なる場合</li>
 </ul>
 </dd></dl>
 <dl class="section since"><dt>Since</dt><dd>5.3 </dd></dl>
@@ -12949,7 +12949,7 @@ Functions</h2><div class="summary"><a href="#group___group___g_s_row_key_predica
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">predicate</td><td>処理対象の<a class="el" href="#group___group___g_s_row_key_predicate.html__ga5e23b8d4106831351b6d134b3d7d2772">GSRowKeyPredicate</a> </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>個別条件の要素の一つとするロウキーの値終了位置とするロウキーの値。<code>NULL</code>の場合、設定が解除されます</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>個別条件の要素の一つとするロウキーの値</td></tr>
   </table>
   </dd>
 </dl>
@@ -12992,14 +12992,14 @@ Functions</h2><div class="summary"><a href="#group___group___g_s_row_key_predica
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">predicate</td><td>処理対象の<a class="el" href="#group___group___g_s_row_key_predicate.html__ga5e23b8d4106831351b6d134b3d7d2772">GSRowKeyPredicate</a> </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>個別条件の要素の一つとするロウキーの値終了位置とするロウキーの値。<code>NULL</code>の場合、設定が解除されます</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>個別条件の要素の一つとするロウキーの値</td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>実行結果のコード番号。次の場合、<a class="el" href="#group___group___basic_definitions.html__ga1abfccde27161c3b8cb20d9532a41006">GS_RESULT_OK</a>以外の値を返します。<ul>
 <li>ポインタ型引数に<code>NULL</code>が指定された場合</li>
 <li>個別条件がすでに設定されていた場合</li>
-<li>期待した型・精度種別が合致条件の評価対象とするロウキーの型と異なる場合</li>
+<li>期待した型・精度種別が合致条件の評価対象とするロウキーのものと異なる場合</li>
 </ul>
 </dd></dl>
 <dl class="section since"><dt>Since</dt><dd>1.5 </dd></dl>
@@ -13270,7 +13270,7 @@ Functions</h2><div class="summary"><a href="#group___group___g_s_row_key_predica
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>実行結果のコード番号。次の場合、<a class="el" href="#group___group___basic_definitions.html__ga1abfccde27161c3b8cb20d9532a41006">GS_RESULT_OK</a>以外の値を返します。<ul>
 <li>引数に<code>NULL</code>が指定された場合</li>
-<li>期待した型・精度種別が合致条件の評価対象とするロウキーの型と異なる場合</li>
+<li>期待した型・精度種別が合致条件の評価対象とするロウキーのものと異なる場合</li>
 </ul>
 </dd></dl>
 <dl class="section since"><dt>Since</dt><dd>5.3 </dd></dl>
@@ -13368,7 +13368,7 @@ Functions</h2><div class="summary"><a href="#group___group___g_s_row_key_predica
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>実行結果のコード番号。次の場合、<a class="el" href="#group___group___basic_definitions.html__ga1abfccde27161c3b8cb20d9532a41006">GS_RESULT_OK</a>以外の値を返します。<ul>
 <li>引数に<code>NULL</code>が指定された場合</li>
-<li>期待した型・精度種別が合致条件の評価対象とするロウキーの型と異なる場合</li>
+<li>期待した型・精度種別が合致条件の評価対象とするロウキーのものと異なる場合</li>
 </ul>
 </dd></dl>
 <dl class="section since"><dt>Since</dt><dd>1.5 </dd></dl>
@@ -14258,7 +14258,7 @@ Functions</h2><div class="summary"><a href="#group___group___g_s_row_key_predica
 <dl class="section return"><dt>Returns</dt><dd>実行結果のコード番号。次の場合、<a class="el" href="#group___group___basic_definitions.html__ga1abfccde27161c3b8cb20d9532a41006">GS_RESULT_OK</a>以外の値を返します。<ul>
 <li><code>predicate</code>引数に<code>NULL</code>が指定された場合</li>
 <li>個別条件がすでに設定されていた場合</li>
-<li>期待した型・精度種別が合致条件の評価対象とするロウキーの型と異なる場合</li>
+<li>期待した型・精度種別が合致条件の評価対象とするロウキーのものと異なる場合</li>
 </ul>
 </dd></dl>
 <dl class="section since"><dt>Since</dt><dd>5.3 </dd></dl>
@@ -14346,7 +14346,7 @@ Functions</h2><div class="summary"><a href="#group___group___g_s_row_key_predica
 <dl class="section return"><dt>Returns</dt><dd>実行結果のコード番号。次の場合、<a class="el" href="#group___group___basic_definitions.html__ga1abfccde27161c3b8cb20d9532a41006">GS_RESULT_OK</a>以外の値を返します。<ul>
 <li><code>predicate</code>引数に<code>NULL</code>が指定された場合</li>
 <li>個別条件がすでに設定されていた場合</li>
-<li>期待した型・精度種別が合致条件の評価対象とするロウキーの型と異なる場合</li>
+<li>期待した型・精度種別が合致条件の評価対象とするロウキーのものと異なる場合</li>
 </ul>
 </dd></dl>
 <dl class="section since"><dt>Since</dt><dd>1.5 </dd></dl>
@@ -14574,7 +14574,7 @@ Functions</h2><div class="summary"><a href="#group___group___g_s_row_key_predica
 <dl class="section return"><dt>Returns</dt><dd>実行結果のコード番号。次の場合、<a class="el" href="#group___group___basic_definitions.html__ga1abfccde27161c3b8cb20d9532a41006">GS_RESULT_OK</a>以外の値を返します。<ul>
 <li><code>predicate</code>引数に<code>NULL</code>が指定された場合</li>
 <li>個別条件がすでに設定されていた場合</li>
-<li>期待した型・精度種別が合致条件の評価対象とするロウキーの型と異なる場合</li>
+<li>期待した型・精度種別が合致条件の評価対象とするロウキーのものと異なる場合</li>
 </ul>
 </dd></dl>
 <dl class="section since"><dt>Since</dt><dd>5.3 </dd></dl>
@@ -14662,7 +14662,7 @@ Functions</h2><div class="summary"><a href="#group___group___g_s_row_key_predica
 <dl class="section return"><dt>Returns</dt><dd>実行結果のコード番号。次の場合、<a class="el" href="#group___group___basic_definitions.html__ga1abfccde27161c3b8cb20d9532a41006">GS_RESULT_OK</a>以外の値を返します。<ul>
 <li><code>predicate</code>引数に<code>NULL</code>が指定された場合</li>
 <li>個別条件がすでに設定されていた場合</li>
-<li>期待した型・精度種別が合致条件の評価対象とするロウキーの型と異なる場合</li>
+<li>期待した型・精度種別が合致条件の評価対象とするロウキーのものと異なる場合</li>
 </ul>
 </dd></dl>
 <dl class="section since"><dt>Since</dt><dd>1.5 </dd></dl>
@@ -16576,6 +16576,7 @@ GS_API_CALL&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hre
 </div><div class="memdoc">
 
 <p>現在時刻を求めます。</p>
+<dl class="section note"><dt>Note</dt><dd>取得分解能はLinux/Windowsともにおおむね1msです(Windows上ではV5.8より)。</dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>現在時刻に相当する<a class="el" href="#group___group___g_s_timestamp.html__gabc8bd11845ab027b9e9f21f8fe98a8bd">GSTimestamp</a>。内部のシステムコールに失敗した場合、<code>-1</code> </dd></dl>
 
 </div>
@@ -18049,7 +18050,7 @@ Public Attributes</h2><div class="summary"><a href="#struct_g_s_precise_timestam
 <tr class="memdesc:af9642b9b74ef9b353a80d201289c5162"><td class="mdescLeft">&#160;</td><td class="mdescRight">通常精度のTIMESTAMP値を表します。<br/></td></tr>
 <tr class="separator:af9642b9b74ef9b353a80d201289c5162"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a502c0644aa6ba769cec497437bbd93fd"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#struct_g_s_precise_timestamp_tag.html__a502c0644aa6ba769cec497437bbd93fd">nanos</a></td></tr>
-<tr class="memdesc:a502c0644aa6ba769cec497437bbd93fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">ミリ秒未満の桁の値について、ナノ秒単位ので表します。<a href="#struct_g_s_precise_timestamp_tag.html__a502c0644aa6ba769cec497437bbd93fd">More...</a><br/></td></tr>
+<tr class="memdesc:a502c0644aa6ba769cec497437bbd93fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">ミリ秒未満の桁の値について、ナノ秒単位で表します。<a href="#struct_g_s_precise_timestamp_tag.html__a502c0644aa6ba769cec497437bbd93fd">More...</a><br/></td></tr>
 <tr class="separator:a502c0644aa6ba769cec497437bbd93fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="struct_g_s_precise_timestamp_tag.html__details" id="struct_g_s_precise_timestamp_tag.html__details"></a><h2 class="groupheader">Detailed Description</h2><div class="summary"><a href="#struct_g_s_precise_timestamp_tag.html__">GSPreciseTimestampTag Struct Reference
@@ -18071,8 +18072,8 @@ Public Attributes</h2><div class="summary"><a href="#struct_g_s_precise_timestam
       </table>
 </div><div class="memdoc">
 
-<p>ミリ秒未満の桁の値について、ナノ秒単位ので表します。</p>
-<dl class="section user"><dt></dt><dd>有効な値の範囲はから<code>999999</code>までです。</dd></dl>
+<p>ミリ秒未満の桁の値について、ナノ秒単位で表します。</p>
+<dl class="section user"><dt></dt><dd>有効な値の範囲は<code>0</code>から<code>999999</code>までです。</dd></dl>
 
 </div>
 </div>
@@ -18650,7 +18651,7 @@ struct {</td></tr>
 </div><div class="memdoc">
 
 <p>高精度のTIMESTAMP型のロウフィールドに対応する値です。</p>
-<dl class="section user"><dt></dt><dd><a class="el" href="#group___group___basic_definitions.html__ga9bc87c6d1526ff1a855d8293281020bc">GSValue</a>を用いてフィールド値を設定・取得する場合、値の型は<a class="el" href="#group___group___basic_definitions.html__ggad23805a8a6dae261c1f52d1ab6a2365da44db07989a772940310b76e9125ccf25">GS_TYPE_PRECISE_TIMESTAMP</a>と対応します。</dd></dl>
+<dl class="section user"><dt></dt><dd><a class="el" href="#group___group___basic_definitions.html__ga9bc87c6d1526ff1a855d8293281020bc">GSValue</a>を用いてフィールド値を設定・取得する場合、値の型は<a class="el" href="#group___group___basic_definitions.html__ggad23805a8a6dae261c1f52d1ab6a2365da44db07989a772940310b76e9125ccf25">GS_TYPE_PRECISE_TIMESTAMP</a>によって識別します。</dd></dl>
 <dl class="section since"><dt>Since</dt><dd>5.3 </dd></dl>
 
 </div>
@@ -18666,7 +18667,7 @@ struct {</td></tr>
 </div><div class="memdoc">
 
 <p>通常精度のTIMESTAMP型のロウフィールドに対応する値です。</p>
-<dl class="section user"><dt></dt><dd><a class="el" href="#group___group___basic_definitions.html__ga9bc87c6d1526ff1a855d8293281020bc">GSValue</a>を用いてフィールド値を設定・取得する場合、値の型は<a class="el" href="#group___group___basic_definitions.html__ggad23805a8a6dae261c1f52d1ab6a2365dac799fe0cb53c743a1e1b4212650c4af3">GS_TYPE_TIMESTAMP</a>と対応します。</dd></dl>
+<dl class="section user"><dt></dt><dd><a class="el" href="#group___group___basic_definitions.html__ga9bc87c6d1526ff1a855d8293281020bc">GSValue</a>を用いてフィールド値を設定・取得する場合、値の型は<a class="el" href="#group___group___basic_definitions.html__ggad23805a8a6dae261c1f52d1ab6a2365dac799fe0cb53c743a1e1b4212650c4af3">GS_TYPE_TIMESTAMP</a>によって識別します。</dd></dl>
 
 </div>
 </div>
